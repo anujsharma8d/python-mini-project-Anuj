@@ -1,39 +1,50 @@
-
-
 documentation:
-  - changed-files:
-    - any-glob-to-any-file:
-      - '**/*.md'
-      - 'docs/**'
+  - '**/*.md'
+  - 'docs/**'
 
 python:
-  - changed-files:
-    - any-glob-to-any-file:
-      - '**/*.py'
+  - '**/*.py'
 
 github-actions:
-  - changed-files:
-    - any-glob-to-any-file:
-      - '.github/**'
+  - '.github/**'
 
 enhancement:
-  - changed-files:
-    - any-glob-to-any-file:
-      - 'src/**'
-      - '*/**.py'
+  - 'src/**'
+  - '*/**.py'
 
-level1:
-  - changed-files:
-    - any-glob-to-any-file:
-      - '**/*.md'
+beginner:
+  - '**/*.md'
 
-level2:
-  - changed-files:
-    - any-glob-to-any-file:
-      - '**/*.py'
+intermediate:
+  - '**/*.py'
 
-level3:
-  - changed-files:
-    - any-glob-to-any-file:
-      - '.github/**'
-      - 'tests/**'
+advanced:
+  - '.github/**'
+  - 'tests/**'
+
+"type:design":
+  - 'web-app/**'
+  - 'web-app/*.html'
+  - 'web-app/js/**'
+  - 'web-app/css/**'
+
+"type:feature":
+  - '**/*.py'
+
+"type:docs":
+  - '**/*.md'
+  - 'README.html'
+  - 'docs/**'
+
+"type:devops":
+  - '.github/**'
+  - '.github/workflows/**'
+
+"type:refactor":
+  - '**/*.py'
+  - 'web-app/**'
+
+"type:bug":
+  - '**/*.py'
+  - 'tests/**'
+

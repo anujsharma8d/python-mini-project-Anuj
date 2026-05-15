@@ -1,9 +1,8 @@
-// Theme Toggle
-const themeToggle = document.getElementById('themeToggle');
-const themeColorMeta = document.getElementById('themeColorMeta');
-const html = document.documentElement;
-const mainContent = document.getElementById('main-content');
-let recentSearches = [];
+/*
+  main.js - lightweight app wiring
+  - safe: guards around missing functions/elements
+  - ensures Try It / Play buttons open modal even if project rendering fails
+*/
 
 function prefersReducedMotion() {
     return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -45,39 +44,32 @@ themeToggle.innerHTML =
         : '<i class="fas fa-moon" aria-hidden="true"></i>';
 updateThemeToggleAria(savedTheme === 'light');
 
-// Audio Controller Setup
-const soundToggle = document.getElementById('soundToggle');
 
-function updateSoundToggleUI(isMuted) {
-    soundToggle.innerHTML = isMuted
-        ? '<i class="fas fa-volume-mute" aria-hidden="true"></i>'
-        : '<i class="fas fa-volume-up" aria-hidden="true"></i>';
-    soundToggle.setAttribute('aria-label', isMuted ? 'Unmute sounds' : 'Mute sounds');
-}
+// Back to Top Button
+const backToTopButton = document.getElementById('backToTop');
 
-// Initial UI state
-updateSoundToggleUI(audioController.isMuted);
+const toggleBackToTopButton = () => {
+    backToTopButton.classList.toggle('visible', window.scrollY > 300);
+};
 
-// Toggle sound
-soundToggle.addEventListener('click', () => {
-    const isMuted = audioController.toggleMute();
-    updateSoundToggleUI(isMuted);
-    // Play a click sound if unmuted
-    if (!isMuted) {
-        audioController.play('click');
-    }
+window.addEventListener('scroll', toggleBackToTopButton, { passive: true });
+toggleBackToTopButton();
+
+backToTopButton.addEventListener('click', () => {
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
 });
 
 // Category Filtering
-// const tabs = document.querySelectorAll('.tab');
-
-document.addEventListener('click', initAudio);
-document.addEventListener('keydown', initAudio);
-document.addEventListener('touchstart', initAudio);
-
-// Filtering Logic
-const tabs = Array.from(document.querySelectorAll('.tab[role="tab"]'));
+const tabs = document.querySelectorAll('.tab');
 const projectCards = document.querySelectorAll('.project-card');
+
+let recentSearches = JSON.parse(localStorage.getItem('recentSearches') || '[]');
+let currentSearchQuery = '';
+let selectedSuggestionIndex = -1;
+let currentCategory = 'all';
+
+// Category Filtering (tabs)
 const searchInput = document.getElementById('projectSearch');
 const searchClear = document.getElementById('searchClear');
 const searchDropdown = document.getElementById('searchDropdown');
@@ -87,16 +79,6 @@ const emptyState = document.getElementById('emptyState');
 const resultsList = document.getElementById('resultsList');
 const resultsSection = document.getElementById('resultsSection');
 const recentSearchesList = document.getElementById('recentSearchesList');
-let recentSearches = [];
-try {
-    const parsed = JSON.parse(localStorage.getItem('recentSearches') || '[]');
-    recentSearches = Array.isArray(parsed) ? parsed : [];
-} catch (e) {
-    recentSearches = [];
-}
-let currentCategory = 'all';
-let currentSearchQuery = '';
-let selectedSuggestionIndex = -1;
 const recentSearchesSection = document.getElementById('recentSearchesSection');
 const tipsSection = document.getElementById('tipsSection');
 
@@ -109,16 +91,76 @@ function debounce(func, delay) {
     };
 }
 
-function filterProjects() {
-    let visibleCount = 0;
-
-    projectCards.forEach((card) => {
+// Get all matching projects for search query
+function getMatchingProjects(query) {
+    if (!query) return [];
+    
+    const matches = [];
+    projectCards.forEach(card => {
         const category = card.getAttribute('data-category');
         const title = card.querySelector('h3').textContent.toLowerCase();
         const description = card.querySelector('p').textContent.toLowerCase();
+        const tags = (card.getAttribute('data-tags') || '').toLowerCase();
+        
+        const categoryMatch = currentCategory === 'all' || category === currentCategory;
+        const searchMatch = title.includes(query) || 
+                           description.includes(query) || 
+                           tags.includes(query);
+        
+        if (categoryMatch && searchMatch) {
+            const project = {
+                card: card,
+                title: card.querySelector('h3').textContent,
+                tags: card.getAttribute('data-tags') || '',
+                category: category
+            };
+            matches.push(project);
+        }
+    });
+    
+    return matches;
+}
 
-        const matchesCategory = activeCategory === 'all' || category === activeCategory;
-        const matchesSearch = title.includes(searchQuery) || description.includes(searchQuery);
+// Render autocomplete suggestions
+function renderSuggestions(query) {
+    if (!query) {
+        renderRecentSearches();
+        return;
+    }
+    
+    const matches = getMatchingProjects(query);
+    
+    if (matches.length === 0) {
+        resultsSection.style.display = 'none';
+        recentSearchesSection.style.display = 'none';
+        tipsSection.style.display = 'block';
+        return;
+    }
+    
+    resultsList.innerHTML = '';
+    matches.slice(0, 8).forEach((project, index) => {
+        const item = document.createElement('div');
+        item.className = 'dropdown-item' + (index === selectedSuggestionIndex ? ' selected' : '');
+        item.innerHTML = `
+            <div class="dropdown-item-icon">
+                ${project.card.querySelector('.card-icon').textContent}
+            </div>
+            <div class="dropdown-item-text">${highlightMatch(project.title, query)}</div>
+            <span class="dropdown-item-tag">${project.category}</span>
+        `;
+        item.addEventListener('click', () => selectSuggestion(project.title));
+        item.addEventListener('mouseenter', () => {
+            selectedSuggestionIndex = index;
+            updateSuggestionHighlight();
+        });
+        resultsList.appendChild(item);
+    });
+    
+    resultsSection.style.display = 'block';
+    recentSearchesSection.style.display = 'none';
+    tipsSection.style.display = 'none';
+    selectedSuggestionIndex = -1;
+}
 
 // Highlight matching text in suggestions
 function highlightMatch(text, query) {
@@ -132,21 +174,16 @@ function highlightMatch(text, query) {
 
 // Render recent searches
 function renderRecentSearches() {
-    if (recentSearchesSection) {
-    recentSearchesSection.style.display = 'none';
-    }
-
-    if (tipsSection) {
-    tipsSection.style.display = 'block';
-    }
-
-    if (resultsSection) {
-    resultsSection.style.display = 'none';
+    if (!recentSearchesSection) return;
+    
+    if (recentSearches.length === 0) {
+        recentSearchesSection.style.display = 'none';
+        if (tipsSection) tipsSection.style.display = 'block';
+        if (resultsSection) resultsSection.style.display = 'none';
+        return;
     }
     
-    if (recentSearchesList) {
     recentSearchesList.innerHTML = '';
-    }
     recentSearches.slice(0, 5).forEach((search) => {
         const item = document.createElement('div');
         item.className = 'dropdown-recent-item';
@@ -180,13 +217,9 @@ function renderRecentSearches() {
         recentSearchesList.appendChild(item);
     });
     
-    if (recentSearchesSection && resultsSection && tipsSection) {
     recentSearchesSection.style.display = 'block';
     resultsSection.style.display = 'none';
     tipsSection.style.display = 'block';
-}
-
-    
 }
 
 function applyCategoryFilter(category) {
@@ -198,18 +231,10 @@ function applyCategoryFilter(category) {
             } else {
                 card.style.animation = 'none';
             }
-            visibleCount++;
         } else {
             card.style.display = 'none';
         }
     });
-
-    // Show/hide no results message
-    if (visibleCount === 0) {
-        noResults.style.display = 'block';
-    } else {
-        noResults.style.display = 'none';
-    }
 }
 
 function moveTabFocus(fromIndex, delta) {
@@ -222,8 +247,7 @@ function moveTabFocus(fromIndex, delta) {
         t.setAttribute('tabindex', selected ? '0' : '-1');
     });
     tabs[next].focus();
-    activeCategory = tabs[next].getAttribute('data-category');
-    filterProjects();
+    applyCategoryFilter(tabs[next].getAttribute('data-category'));
 }
 
 tabs.forEach((tab, index) => {
@@ -234,8 +258,7 @@ tabs.forEach((tab, index) => {
             t.setAttribute('aria-selected', selected ? 'true' : 'false');
             t.setAttribute('tabindex', selected ? '0' : '-1');
         });
-        activeCategory = tab.getAttribute('data-category');
-        filterProjects();
+        applyCategoryFilter(tab.getAttribute('data-category'));
     });
 
     tab.addEventListener('keydown', (e) => {
@@ -260,8 +283,7 @@ tabs.forEach((tab, index) => {
 });
 
 // Initialize
-// renderRecentSearches() disabled: recentSearchesSection element
-// does not exist in current HTML, causing null reference error.
+renderRecentSearches();
 
 // Modal Management
 const modal = document.getElementById('projectModal');
@@ -273,170 +295,199 @@ let lastFocusedElement = null;
 let modalTabTrapHandler = null;
 
 function getFocusableElements(root) {
-    const selector =
-        'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
-    return Array.from(root.querySelectorAll(selector)).filter(
-        (el) => !el.closest('[aria-hidden="true"]') && !el.classList.contains('visually-hidden')
-    );
+    const selector = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+    return Array.from(root.querySelectorAll(selector)).filter(el => !el.closest('[aria-hidden="true"]') && !el.classList.contains('visually-hidden'));
 }
 
-function focusModalInitial() {
-    const bodyFocusables = getFocusableElements(modalBody);
-    if (bodyFocusables.length > 0) {
-        bodyFocusables[0].focus();
-    } else {
-        modalClose.focus();
-    }
-}
-
-function attachModalFocusTrap() {
-    if (modalTabTrapHandler) {
-        document.removeEventListener('keydown', modalTabTrapHandler, true);
-    }
-    modalTabTrapHandler = (e) => {
-        if (e.key !== 'Tab' || !modal.classList.contains('active')) return;
-        const modalContentEl = modal.querySelector('.modal-content');
-        const focusables = getFocusableElements(modalContentEl);
-        if (focusables.length === 0) return;
+function trapFocus(modalEl) {
+    let handler = (e) => {
+        if (e.key !== 'Tab' || !modalEl.classList.contains('active')) return;
+        const focusables = getFocusableElements(modalEl);
+        if (!focusables.length) return;
         const first = focusables[0];
         const last = focusables[focusables.length - 1];
-        if (e.shiftKey) {
-            if (document.activeElement === first) {
-                e.preventDefault();
-                last.focus();
-            }
-        } else if (document.activeElement === last) {
+        if (e.shiftKey && document.activeElement === first) {
+            e.preventDefault();
+            last.focus();
+        } else if (!e.shiftKey && document.activeElement === last) {
             e.preventDefault();
             first.focus();
         }
     };
-    document.addEventListener('keydown', modalTabTrapHandler, true);
+    document.addEventListener('keydown', handler, true);
+    return () => document.removeEventListener('keydown', handler, true);
 }
 
-function setMainInert(isInert) {
-    if (!mainContent) return;
-    if (isInert) {
-        mainContent.setAttribute('inert', '');
-    } else {
-        mainContent.removeAttribute('inert');
-    }
+function safeRun(fn) {
+    try { fn(); } catch (err) { console.error(err); }
 }
 
-function closeModal() {
-    if (!modal.classList.contains('active')) return;
-    modal.classList.remove('active');
-    modal.setAttribute('aria-hidden', 'true');
-    document.body.style.overflow = '';
-    setMainInert(false);
+document.addEventListener('DOMContentLoaded', () => {
+    const html = document.documentElement;
+    const themeToggle = document.getElementById('themeToggle');
+    const soundToggle = document.getElementById('soundToggle');
+    const backToTop = document.getElementById('backToTop');
+    const tabs = Array.from(document.querySelectorAll('.tab'));
+    const projectCards = Array.from(document.querySelectorAll('.project-card'));
+    const modal = document.getElementById('projectModal');
+    const modalClose = document.getElementById('modalClose');
+    const modalBody = document.getElementById('modalBody');
+    const modalTitle = document.getElementById('modalDialogTitle');
 
-    const iframe = modalBody.querySelector('iframe');
-    if (iframe) {
-        iframe.remove();
+    // Theme
+    if (themeToggle) {
+        const saved = localStorage.getItem('theme') || 'dark';
+        html.setAttribute('data-theme', saved);
+        themeToggle.addEventListener('click', () => {
+            const cur = html.getAttribute('data-theme') === 'light' ? 'dark' : 'light';
+            html.setAttribute('data-theme', cur);
+            localStorage.setItem('theme', cur);
+        });
     }
 
-    if (modalTabTrapHandler) {
-        document.removeEventListener('keydown', modalTabTrapHandler, true);
-        modalTabTrapHandler = null;
+    // Sound (safe)
+    if (soundToggle) {
+        const update = () => {
+            if (window.audioController) soundToggle.innerHTML = window.audioController.isMuted ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+        };
+        update();
+        soundToggle.addEventListener('click', () => {
+            if (window.audioController && typeof window.audioController.toggleMute === 'function') {
+                const muted = window.audioController.toggleMute();
+                update();
+                if (!muted && typeof window.audioController.play === 'function') window.audioController.play('click');
+            }
+        });
     }
 
-    if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') {
-        lastFocusedElement.focus();
+    // Tabs
+    function applyFilter(category) {
+        projectCards.forEach(card => {
+            const cat = card.getAttribute('data-category') || 'all';
+            card.style.display = (category === 'all' || cat === category) ? '' : 'none';
+        });
     }
-    lastFocusedElement = null;
+    tabs.forEach(tab => tab.addEventListener('click', () => { tabs.forEach(t => t.classList.remove('active')); tab.classList.add('active'); applyFilter(tab.getAttribute('data-category') || 'all'); }));
+
+// Random Project Generator
+const randomProjectBtn = document.getElementById('randomProjectBtn');
+
+function getRandomProject() {
+    // Get all visible project cards (based on current filter)
+    const visibleCards = Array.from(projectCards).filter(card => {
+        return card.style.display !== 'none';
+    });
+    
+    if (visibleCards.length === 0) {
+        // If no cards are visible (shouldn't happen), get all cards
+        return projectCards[Math.floor(Math.random() * projectCards.length)];
+    }
+    
+    return visibleCards[Math.floor(Math.random() * visibleCards.length)];
 }
 
-modalClose.addEventListener('click', closeModal);
+function selectRandomProject() {
+    const randomCard = getRandomProject();
+    
+    // Add shuffle animation to the button
+    randomProjectBtn.classList.add('shuffle');
+    
+    // Remove animation class after it completes
+    setTimeout(() => {
+        randomProjectBtn.classList.remove('shuffle');
+    }, 600);
+    
+    // Open the random project after a short delay for effect
+    setTimeout(() => {
+        const projectName = randomCard.getAttribute('data-project');
+        openProject(projectName);
+        
+        // Optional: Scroll to project card smoothly
+        randomCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }, 300);
+}
 
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-        closeModal();
-    }
-});
+randomProjectBtn.addEventListener('click', selectRandomProject);
 
-document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && modal.classList.contains('active')) {
-        e.preventDefault();
-        closeModal();
-    }
-});
-
-projectCards.forEach((card) => {
+// Open Project Modal
+projectCards.forEach(card => {
     const playButton = card.querySelector('.btn-play');
-    const titleText = card.querySelector('h3')?.textContent?.trim() || 'project';
-    playButton.setAttribute('aria-label', `Open ${titleText}`);
-
+    
     playButton.addEventListener('click', (e) => {
         e.stopPropagation();
         const projectName = card.getAttribute('data-project');
-        openProject(projectName, playButton);
+        openProject(projectName);
     });
-
+    
     card.addEventListener('click', () => {
         const projectName = card.getAttribute('data-project');
-        openProject(projectName, card);
+        openProject(projectName);
     });
 });
 
-function openProject(projectName, triggerElement) {
-    lastFocusedElement = triggerElement || document.activeElement;
-    modalDialogTitle.textContent = formatProjectTitle(projectName, triggerElement);
-    modal.classList.add('active');
-    modal.setAttribute('aria-hidden', 'false');
-    document.body.style.overflow = 'hidden';
-    setMainInert(true);
+        // load content safely
+        safeRun(() => {
+            if (typeof getProjectHTML === 'function') {
+                modalBody.innerHTML = getProjectHTML(name) || '<div style="padding:1rem">Project content unavailable.</div>';
+            } else {
+                modalBody.innerHTML = '<div style="padding:1rem">Project content unavailable.</div>';
+            }
+            if (typeof initializeProject === 'function') initializeProject(name);
+        });
 
-    loadProjectContent(projectName);
-
-    requestAnimationFrame(() => {
-        focusModalInitial();
-        attachModalFocusTrap();
-    });
-}
-
-function formatProjectTitle(projectName, triggerElement) {
-    if (triggerElement) {
-        const card = triggerElement.closest('.project-card');
-        const h3 = card?.querySelector('h3');
-        if (h3?.textContent) return h3.textContent.trim();
+        // focus trap
+        removeTrap = trapFocus(modal);
+        // initial focus
+        const focusables = getFocusableElements(modalBody);
+        (focusables[0] || modalClose)?.focus();
     }
-    return projectName
-        .split('-')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ');
-}
 
-function loadProjectContent(projectName) {
-    const projectContent = getProjectHTML(projectName);
-    modalBody.innerHTML = projectContent;
-    initializeProject(projectName);
-}
+    function closeProjectSafe() {
+        if (!modal || !modal.classList.contains('active')) return;
+        modal.classList.remove('active');
+        modal.setAttribute('aria-hidden', 'true');
+        document.body.style.overflow = '';
+        setMainInert(false);
+        if (removeTrap) { removeTrap(); removeTrap = null; }
+        if (modalBody) modalBody.innerHTML = '';
+        if (lastFocusedElement && typeof lastFocusedElement.focus === 'function') lastFocusedElement.focus();
+        lastFocusedElement = null;
+    }
 
-// Smooth scroll (respects reduced motion)
-document.querySelectorAll('a[href^="#"]').forEach((anchor) => {
-    anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        const target = document.querySelector(this.getAttribute('href'));
-        if (target) {
-            target.scrollIntoView({
-                behavior: prefersReducedMotion() ? 'auto' : 'smooth'
-            });
+    if (modalClose) modalClose.addEventListener('click', closeProjectSafe);
+    if (modal) modal.addEventListener('click', (e) => { if (e.target === modal) closeProjectSafe(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeProjectSafe(); });
+
+    // Wire cards and play buttons
+    projectCards.forEach(card => {
+        const name = card.getAttribute('data-project');
+        const play = card.querySelector('.btn-play');
+        if (play) {
+            play.setAttribute('aria-label', `Open ${name}`);
+            play.addEventListener('click', (e) => { e.stopPropagation(); openProjectSafe(name, play); });
         }
+        card.addEventListener('click', () => openProjectSafe(name, card));
     });
+
+    // Back to top
+    if (backToTop) backToTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    // Intersection animations
+    if (!prefersReducedMotion()) {
+        try {
+            const observer = new IntersectionObserver((entries) => { entries.forEach(entry => { if (entry.isIntersecting) entry.target.style.animation = 'fadeInUp 0.6s ease'; }); }, { threshold: 0.1, rootMargin: '0px 0px -100px 0px' });
+            projectCards.forEach(c => observer.observe(c));
+        } catch (e) { /* ignore */ }
+    }
 });
 
-// Add entrance animation on scroll
-const observerOptions = {
-    threshold: 0.1,
-    rootMargin: '0px 0px -100px 0px'
-};
+// Accessibility helper referenced by modal code
+function setMainInert(isInert) {
+    const main = document.getElementById('main-content');
+    if (!main) return;
+    if (isInert) main.setAttribute('inert', ''); else main.removeAttribute('inert');
+}
 
-const observer = new IntersectionObserver((entries) => {
-    if (prefersReducedMotion()) return;
-    entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-            entry.target.style.animation = 'fadeInUp 0.6s ease';
-        }
-    });
-}, observerOptions);
+let lastFocusedElement = null;
 
-projectCards.forEach((card) => observer.observe(card));
+// End of file (single coherent main.js implementation above)
