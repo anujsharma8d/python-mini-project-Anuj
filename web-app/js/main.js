@@ -284,14 +284,22 @@ document.addEventListener('DOMContentLoaded', function () {
         return matches;
     }
 
-    function highlightMatch(text, query) {
-        var escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-        var parts = text.split(new RegExp('(' + escapedQuery + ')', 'gi'));
-        return parts.map(function (part) {
-            return part.toLowerCase() === query.toLowerCase()
-                ? '<mark style="background:rgba(99,102,241,0.3);color:var(--primary-color);font-weight:600;">' + part + '</mark>'
-                : part;
-        }).join('');
+    function highlightText(container, text, query) {
+        const safeQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+        const chunks = text.split(new RegExp(`(${safeQuery})`, 'gi'));
+
+        chunks.forEach((part) => {
+            if (part.toLowerCase() === query.toLowerCase()) {
+                const highlight = document.createElement('mark');
+                highlight.style.background = 'rgba(99, 102, 241, 0.3)';
+                highlight.style.color = 'var(--primary-color)';
+                highlight.style.fontWeight = '600';
+                highlight.textContent = part;
+                container.appendChild(highlight);
+            } else if (part) {
+                container.appendChild(document.createTextNode(part));
+            }
+        });
     }
 
     function updateSuggestionHighlight() {
@@ -356,19 +364,33 @@ document.addEventListener('DOMContentLoaded', function () {
             recentSearches.slice(0, 5).forEach(function (search) {
                 var item = document.createElement('div');
                 item.className = 'dropdown-recent-item';
-                item.innerHTML =
-                    '<div class="dropdown-recent-text">' +
-                        '<i class="fas fa-history" style="opacity:0.5;font-size:0.9rem;"></i>' +
-                        '<span style="flex:1;cursor:pointer;color:var(--text-secondary);">' + search + '</span>' +
-                    '</div>' +
-                    '<button class="dropdown-recent-remove" aria-label="Remove search">' +
-                        '<i class="fas fa-x"></i>' +
-                    '</button>';
+                const recentText = document.createElement('div');
+                recentText.className = 'dropdown-recent-text';
 
-                var textElement = item.querySelector('span');
-                var removeBtn   = item.querySelector('.dropdown-recent-remove');
+                const clockIcon = document.createElement('i');
+                clockIcon.className = 'fas fa-history';
+                clockIcon.style.opacity = '0.5';
+                clockIcon.style.fontSize = '0.9rem';
 
-                textElement.addEventListener('click', function () {
+                const searchLabel = document.createElement('span');
+                searchLabel.style.flex = '1';
+                searchLabel.style.cursor = 'pointer';
+                searchLabel.style.color = 'var(--text-secondary)';
+                searchLabel.textContent = search;
+
+                recentText.append(clockIcon, searchLabel);
+
+                const removeButton = document.createElement('button');
+                removeButton.className = 'dropdown-recent-remove';
+                removeButton.setAttribute('aria-label', 'Remove search');
+
+                const removeIcon = document.createElement('i');
+                removeIcon.className = 'fas fa-x';
+                removeButton.appendChild(removeIcon);
+
+                item.append(recentText, removeButton);
+
+                searchLabel.addEventListener('click', () => {
                     if (searchInput) {
                         searchInput.value  = search;
                         currentSearchQuery = search;
@@ -377,7 +399,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     }
                 });
 
-                removeBtn.addEventListener('click', function (e) {
+                removeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     recentSearches = recentSearches.filter(function (s) { return s !== search; });
                     localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
@@ -410,14 +432,23 @@ document.addEventListener('DOMContentLoaded', function () {
             matches.slice(0, 8).forEach(function (project, index) {
                 var item    = document.createElement('div');
                 item.className = 'dropdown-item' + (index === selectedSuggestionIndex ? ' selected' : '');
-                var iconEl  = project.card.querySelector('.card-icon');
-                var iconText = iconEl ? iconEl.textContent : '';
-                item.innerHTML =
-                    '<div class="dropdown-item-icon">' + iconText + '</div>' +
-                    '<div class="dropdown-item-text">' + highlightMatch(project.title, query) + '</div>' +
-                    '<span class="dropdown-item-tag">' + project.category + '</span>';
-                item.addEventListener('click', function () { selectSuggestion(project.title); });
-                item.addEventListener('mouseenter', function () {
+                const iconEl = project.card.querySelector('.card-icon');
+                const iconText = iconEl ? iconEl.textContent : '';
+                const iconBox = document.createElement('div');
+                iconBox.className = 'dropdown-item-icon';
+                iconBox.textContent = iconText;
+
+                const titleBox = document.createElement('div');
+                titleBox.className = 'dropdown-item-text';
+                highlightText(titleBox, project.title, query);
+
+                const categoryTag = document.createElement('span');
+                categoryTag.className = 'dropdown-item-tag';
+                categoryTag.textContent = project.category;
+
+                item.append(iconBox, titleBox, categoryTag);
+                item.addEventListener('click', () => selectSuggestion(project.title));
+                item.addEventListener('mouseenter', () => {
                     selectedSuggestionIndex = index;
                     updateSuggestionHighlight();
                 });
