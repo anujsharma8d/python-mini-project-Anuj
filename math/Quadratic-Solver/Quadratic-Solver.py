@@ -63,7 +63,7 @@ def rational_roots(a, b, r):
     print(f"🟢 Decimal form:\n💠 {float(x1):.4f}\n💠 {float(x2):.4f}\n")
 
 
-def irrational_roots(a, b, d):
+def non_rational_roots(a, b, d, complex=False):
     """
     To display the exact form:
     - convert √D to coeff.√remainder form using factor_radical (returns coeff,rem)
@@ -71,25 +71,34 @@ def irrational_roots(a, b, d):
     - convert coeff.√remainder to string using format_radical
     - format the final output using format_roots
 
-    the final part looks like (whole_part +/- coeff.√rem) / denominator
+    irrational roots looks like (whole_part +/- coeff.√rem) / denominator
+    complex --> (whole_part +/- coeff.i√rem) / denominator
     """
     # For exact form
-    coeff, rem = factor_radical(d)
+    coeff, rem = factor_radical(-d) if complex else factor_radical(d)
     whole, coeff, denom = simplify_fraction(-b, coeff, 2 * a)
-    irr_part = format_non_rational(coeff, rem)
-    r1, r2 = format_roots(whole, irr_part, denom)
+    radical_part = (
+        format_non_rational(coeff, rem, "i")
+        if complex
+        else format_non_rational(coeff, rem)
+    )
+    r1, r2 = format_roots(whole, radical_part, denom)
 
-    # For decimal form
-    x1 = (-b + sqrt(d)) / (2 * a)
-    x2 = (-b - sqrt(d)) / (2 * a)
-
-    # Printing
-    print(f"🟢 Exact form:\n💠 {r1}\n💠 {r2}\n")
-    print(f"🟢 Decimal form:\n💠 {x1:.4f}\n💠 {x2:.4f}\n")
+    # For decimal form (IRRATIONAL ROOTS ONLY)
+    if not complex:
+        x1 = (-b + sqrt(d)) / (2 * a)
+        x2 = (-b - sqrt(d)) / (2 * a)
+        print(f"🟢 Exact form:\n💠 {r1}\n💠 {r2}\n")
+        print(f"🟢 Decimal form:\n💠 {x1:.4f}\n💠 {x2:.4f}\n")
+    else:
+        print(f"🟢 Complex roots:\n💠 {r1}\n💠 {r2}\n")
 
 
 def find_roots(coeffs):
     a, b, c = coeffs
+    if a == 0:
+        print("Error: Not a quadratic equation (a=0)!")
+        return
     d = b * b - 4 * a * c
 
     # REAL ROOTS
@@ -101,14 +110,17 @@ def find_roots(coeffs):
             rational_roots(a, b, radical_int)
         # Irrational roots
         else:
-            irrational_roots(a, b, d)
+            non_rational_roots(a, b, d, complex=False)
     # COMPLEX ROOTS
     else:
-        pass
+        non_rational_roots(a, b, d, complex=True)
 
 
 # User Input
 inp = input("Enter a,b,c: ")
 coeffs = [int(i.strip()) for i in inp.split(",") if i.strip()]
 
-find_roots(coeffs)
+if len(coeffs) != 3:
+    print("Please enter three coefficients.")
+else:
+    find_roots(coeffs)
