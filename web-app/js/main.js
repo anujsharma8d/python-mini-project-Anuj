@@ -419,6 +419,8 @@ document.addEventListener('DOMContentLoaded', function () {
           if (grid) grid.scrollIntoView({ behavior: 'smooth', block: 'start' });
           return;
         }
+      }
+    });    
     st.addEventListener("click", function () {
       var category = st.getAttribute("data-category");
 
@@ -458,7 +460,7 @@ document.addEventListener('DOMContentLoaded', function () {
         applyCategoryFilter(category);
         if (projectsSection) projectsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
-    });
+      });
   });
 
   /* ── Sticky Tabs ──────────────────────────────────────────── */
@@ -849,10 +851,10 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 
   renderRecentSearches();
-
+})
   /* ═══════════════════════════════════════════════════════════════
-     MODAL
-     ═══════════════════════════════════════════════════════════════ */
+      MODAL
+    ═══════════════════════════════════════════════════════════════ */
   function getFocusableElements(root) {
     var sel = 'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
     return Array.from(root.querySelectorAll(sel)).filter(function (el) {
@@ -868,7 +870,7 @@ document.addEventListener('DOMContentLoaded', function () {
       !el.classList.contains("visually-hidden")
     );
   });
-}
+
 
   function trapFocus(modalEl) {
     var handler = function (e) {
@@ -1351,10 +1353,14 @@ if (projectContent) {
       e.preventDefault();
       var cat = a.getAttribute('data-cat');
       var tab = document.querySelector('.sidebar-tab[data-category="' + cat + '"]');
+    });
+  });  
+
   // FIX #2: Footer links call tab.click() which triggers the sidebar tab
   // handler. That handler now correctly filters in place on the homepage
   // (fix #1), so footer links automatically work once fix #1 is applied.
   // No additional changes needed here beyond the comment for clarity.
+  
   document.querySelectorAll(".footer-cat-link").forEach(function (link) {
     link.addEventListener("click", function (e) {
       e.preventDefault();
@@ -1367,7 +1373,6 @@ if (projectContent) {
     });
   });
 
-});
 /* ── Scroll Progress Bar ───────────────────────────── */
 
 var progressBar = document.getElementById("scrollProgressBar");
