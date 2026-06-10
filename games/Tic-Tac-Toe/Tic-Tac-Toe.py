@@ -108,7 +108,7 @@ def main():
 
     def play(i: int) -> None:
         """Make a move at the given index."""
-        nonlocal current, game_over
+        global current, game_over
         if game_over or board[i]: return
         board[i] = current
         w, _ = check_winner()
