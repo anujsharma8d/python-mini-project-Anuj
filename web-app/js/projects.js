@@ -25,6 +25,7 @@ function getProjectHTML(projectName) {
         'matrix-calculator': () => getMatrixCalculatorHTML(),
         'unit-converter': getUnitConverterHTML(),
         'resume-analyzer': getResumeAnalyzerHTML(),
+        'reverse-hangman': () => getReverseHangmanHTML
     };
     
     return projects[projectName] || '<h2>Project Coming Soon!</h2>';
@@ -54,6 +55,7 @@ function initializeProject(projectName) {
         'matrix-calculator': initMatrixCalculator,
         'unit-converter':initUnitConverter,
         'resume-analyzer':initResumeAnalyzer,
+        'reverse-hangman': initReverseHangman
     };
     
     if (initializers[projectName]) {
