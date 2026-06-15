@@ -728,6 +728,16 @@ document.addEventListener("DOMContentLoaded", function () {
 
       document.body.classList.toggle("sidebar-active", showSidebar);
       console.log('Sidebar active:', showSidebar, 'scrollY:', window.scrollY);
+
+
+      const fixedThemeToggle = document.getElementById("fixed-theme-toggle");
+      if(showSidebar){
+        fixedThemeToggle.style.display = "none";
+      }
+      else{
+        fixedThemeToggle.style.display = "block";
+      }
+
     };
 
     window.addEventListener('scroll', checkAndToggleSidebar);
