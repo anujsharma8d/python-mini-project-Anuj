@@ -1,4 +1,4 @@
-// Project Registry
+﻿// Project Registry
 // Each project's HTML and logic lives in its own file under js/projects/
 
 function getProjectHTML(projectName) {
@@ -25,7 +25,8 @@ function getProjectHTML(projectName) {
         'matrix-calculator': () => getMatrixCalculatorHTML(),
         'unit-converter': getUnitConverterHTML(),
         'resume-analyzer': getResumeAnalyzerHTML(),
-        'reverse-hangman': () => getReverseHangmanHTML
+        'reverse-hangman': () => getReverseHangmanHTML,
+        'snake-game': getSnakeGameHTML()
     };
     
     return projects[projectName] || '<h2>Project Coming Soon!</h2>';
@@ -3191,6 +3192,7 @@ function initializeProject(projectName) {
     "war-card-game": "initWarCardGame",
     "number-sliding-puzzle": "initNumberSlidingPuzzle",
     "budget-tracker": "initBudgetTracker"
+    "caesar-cipher": "initCaesarCipher"
   };
 
   const initializerName = initializers[projectName];
