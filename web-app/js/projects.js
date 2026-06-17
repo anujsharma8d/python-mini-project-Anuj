@@ -1,4 +1,4 @@
-// Project Registry
+﻿// Project Registry
 // Each project's HTML and logic lives in its own file under js/projects/
 
 function getProjectHTML(projectName) {
@@ -25,7 +25,8 @@ function getProjectHTML(projectName) {
         'matrix-calculator': () => getMatrixCalculatorHTML(),
         'unit-converter': getUnitConverterHTML(),
         'resume-analyzer': getResumeAnalyzerHTML(),
-        'reverse-hangman': () => getReverseHangmanHTML
+        'reverse-hangman': () => getReverseHangmanHTML,
+        'snake-game': getSnakeGameHTML()
     };
     
     return projects[projectName] || '<h2>Project Coming Soon!</h2>';
@@ -1595,24 +1596,6 @@ function getProjectHTML(projectName) {
 
 const projectInstructions = {
   // GAMES
-  "war-card-game": {
-    title: "⚔️ How to Play War Card Game",
-    steps: [
-      "Enter names or check the option to play against the CPU.",
-      "Each player starts with a deck of 26 cards.",
-      "Click 'Draw / Battle' to draw the top card from both decks.",
-      "The player with the higher card rank wins the round and gets a point.",
-      "Ace is the highest, 2 is the lowest.",
-      "Play continues until all cards are drawn. The player with the most points wins!"
-  "number-sliding-puzzle": {
-    title: "🧩 How to Play Number Sliding Puzzle",
-    steps: [
-      "Use arrow keys (← ↑ → ↓) or click/tap on tiles next to the empty space to slide them.",
-      "Arrange the numbers in ascending order from 1 to 8, with the blank space at the bottom right.",
-      "A moves counter keeps track of your steps.",
-      "Click the Reset button to restart the game."
-    ]
-  },
   "2048-game": {
     title: "🎮 How to Play 2048",
     steps: [
@@ -3175,9 +3158,7 @@ function initializeProject(projectName) {
     "color-palette": "initColorPalette",
     "math-quiz": "initMathQuiz",
     "resume-analyzer": "initResumeAnalyzer",
-    "caesar-cipher": "initCaesarCipher",
-    "war-card-game": "initWarCardGame"
-    "number-sliding-puzzle": "initNumberSlidingPuzzle"
+    "caesar-cipher": "initCaesarCipher"
   };
 
   const initializerName = initializers[projectName];
