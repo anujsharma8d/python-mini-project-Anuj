@@ -27,6 +27,7 @@ function getProjectHTML(projectName) {
         'resume-analyzer': getResumeAnalyzerHTML(),
         'reverse-hangman': () => getReverseHangmanHTML,
         'snake-game': getSnakeGameHTML(),
+        'bubble-sort': getBubbleSortHTML(),
         'fourier-series': getFourierSeriesHTML()
     };
     
