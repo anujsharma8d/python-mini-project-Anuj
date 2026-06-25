@@ -104,10 +104,15 @@ var recentSearches = JSON.parse(localStorage.getItem("recentSearches") || "[]");
 // INFO MODAL FUNCTIONS - FIXED
 // ============================================
 
+// main.js ~line 107 — reorder like this:
 function showInfoModal(title, steps) {
   var overlay = document.getElementById("infoModalOverlay");
   var titleEl = document.getElementById("infoModalTitle");
   var listEl = document.getElementById("infoModalList");
+  var closeBtn = document.getElementById("infoModalClose");
+  var gotItBtn = document.getElementById("infoModalGotIt");
+
+  // ✅ Declare BEFORE closeModal so they're available inside it
   var closeBtn = document.getElementById("infoModalClose");
   var gotItBtn = document.getElementById("infoModalGotIt");
 
