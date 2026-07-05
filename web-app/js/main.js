@@ -1165,6 +1165,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
       input.addEventListener("keydown", function (e) {
         if (e.key === "Escape") {
+          input.value = "";
+          syncSearchInputs("", input);
+          currentSearchQuery = "";
+          performSearch(false);
           closeDropdown();
           input.blur();
         }
@@ -1189,8 +1193,26 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   });
 
+  function isTypingInField(target) {
+    if (!target) return false;
+    var tag = target.tagName ? target.tagName.toLowerCase() : "";
+    return (
+      tag === "input" ||
+      tag === "textarea" ||
+      tag === "select" ||
+      target.isContentEditable
+    );
+  }
+
   document.addEventListener("keydown", function (e) {
     if ((e.ctrlKey || e.metaKey) && e.key === "k") {
+      e.preventDefault();
+      if (navSearchInput) navSearchInput.focus();
+      else if (searchInput) searchInput.focus();
+      return;
+    }
+
+    if (e.key === "/" && !isTypingInField(e.target)) {
       e.preventDefault();
       if (navSearchInput) navSearchInput.focus();
       else if (searchInput) searchInput.focus();
