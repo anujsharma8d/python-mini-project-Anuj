@@ -105,9 +105,19 @@ function initFibonacci() {
 
         // Validation
         if (value === '' || isNaN(n) || n <= 0) {
-            display.textContent = `
+            display.innerHTML = `
                 <p class="fib-error">
                     Please enter a number greater than 0
+                </p>
+            `;
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            return;
+        }
+
+        if (n > 20) {
+            display.innerHTML = `
+                <p class="fib-error">
+                    Please enter a number between 1 and 20
                 </p>
             `;
             ctx.clearRect(0, 0, canvas.width, canvas.height);
