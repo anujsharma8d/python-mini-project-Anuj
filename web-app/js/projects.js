@@ -698,4 +698,4 @@ function initializeProject(projectName) {
     window[initializerName]();
   }
 }
-}
+
