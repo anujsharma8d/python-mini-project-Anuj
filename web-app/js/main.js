@@ -20,7 +20,24 @@ function safeRun(fn) {
     console.error(e);
   }
 }
+// Import the initSearch function from your updated search module
+import { initSearch } from "./modules/search.js";
 
+document.addEventListener("DOMContentLoaded", () => {
+    // Other initializations...
+
+    // Initialize the search bar
+    initSearch((query) => {
+        // This callback runs whenever a search is triggered
+        console.log("Searching for:", query);
+        
+        // If you have a function that filters projects globally, call it here.
+        // Example:
+        // if (typeof window.applySearchFilter === 'function') {
+        //     window.applySearchFilter(query);
+        // }
+    });
+});
 function debounce(fn, ms) {
   var timer;
   return function () {
@@ -238,7 +255,6 @@ document.addEventListener("DOMContentLoaded", function () {
 
     var allMains = Array.from(document.querySelectorAll("main#main-content"));
     var visibleMain = allMains[1] || allMains[0] || null;
-    var timelineSectionNode = document.getElementById("timelineSection");
     var projectsSectionNode = document.getElementById("projectsSection");
     var playgroundSectionNode = document.getElementById("playgroundSection");
     var footerNode = document.querySelector("footer.footer");
@@ -918,81 +934,91 @@ document.addEventListener("DOMContentLoaded", function () {
     if (searchDropdown) searchDropdown.classList.remove("active");
   }
 
-  function renderRecentSearches() {
-    if (noResultsMessage) noResultsMessage.style.display = "none";
-    if (!recentSearchesSection) return;
-
-    if (recentSearches.length === 0) {
-      recentSearchesSection.style.display = "none";
-      if (tipsSection) tipsSection.style.display = "block";
-      if (resultsSection) resultsSection.style.display = "none";
-      return;
-    }
-
-    if (recentSearchesList) {
-      recentSearchesList.innerHTML = "";
-      recentSearches.slice(0, 5).forEach(function (search) {
-        var item = document.createElement("div");
-        item.className = "dropdown-recent-item";
-        var text = document.createElement("div");
-        text.className = "dropdown-recent-text";
-
-        var clock = document.createElement("i");
-        clock.className = "fas fa-history";
-        clock.style.opacity = "0.5";
-        clock.style.fontSize = "0.8rem";
-
-        var label = document.createElement("span");
-        label.textContent = search;
-
-        text.append(clock, label);
-
-        var removeBtn = document.createElement("button");
-        removeBtn.className = "dropdown-recent-remove";
-        removeBtn.setAttribute("aria-label", "Remove search");
-        removeBtn.innerHTML = '<i class="fas fa-times"></i>';
-
-        item.append(text, removeBtn);
-
-        label.addEventListener("click", function () {
-          syncSearchInputs(search, searchInput);
-          currentSearchQuery = search;
-          performSearch(true);
-          closeDropdown();
-        });
-
-        removeBtn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          recentSearches = recentSearches.filter(function (s) {
-            return s !== search;
-          });
+  function wireClearRecentBtn() {
+    var headerClearBtn = document.getElementById("clearRecentBtn");
+    if (!headerClearBtn) return;
+    headerClearBtn.style.display = recentSearches.length
+      ? "inline-flex"
+      : "none";
+    headerClearBtn.onclick = function (e) {
+      e.stopPropagation();
+      if (!recentSearches || recentSearches.length === 0) return;
+      showConfirm(
+        "Clear all recent searches? This cannot be undone.",
+        function () {
+          recentSearches = [];
           localStorage.setItem(
             "recentSearches",
             JSON.stringify(recentSearches)
           );
           renderRecentSearches();
-        });
+          closeDropdown();
+        },
+        function () {}
+      );
+    };
+  }
 
-        recentSearchesList.appendChild(item);
-      });
+  function renderRecentSearches() {
+    if (noResultsMessage) noResultsMessage.style.display = "none";
+    if (!recentSearchesSection) return;
 
-      // Wire up header Clear All button (if present)
-      var headerClearBtn = document.getElementById('clearRecentBtn');
-      if (headerClearBtn) {
-        headerClearBtn.style.display = recentSearches.length ? 'inline-flex' : 'none';
-        headerClearBtn.onclick = function (e) {
-          e.stopPropagation();
-          if (!recentSearches || recentSearches.length === 0) return;
-          showConfirm('Clear all recent searches? This cannot be undone.', function () {
-            recentSearches = [];
-            localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
-            renderRecentSearches();
+    if (recentSearchesList) {
+      recentSearchesList.innerHTML = "";
+
+      if (recentSearches.length === 0) {
+        var emptyEl = document.createElement("p");
+        emptyEl.className = "recent-searches-empty";
+        emptyEl.textContent =
+          "No recent searches yet. Start exploring projects!";
+        recentSearchesList.appendChild(emptyEl);
+      } else {
+        recentSearches.slice(0, 5).forEach(function (search) {
+          var chip = document.createElement("div");
+          chip.className = "recent-search-chip";
+          chip.setAttribute("role", "listitem");
+
+          var labelBtn = document.createElement("button");
+          labelBtn.type = "button";
+          labelBtn.className = "recent-search-chip-label";
+          labelBtn.setAttribute("aria-label", "Search for " + search);
+          var labelSpan = document.createElement("span");
+          labelSpan.textContent = search;
+          labelBtn.appendChild(labelSpan);
+
+          var removeBtn = document.createElement("button");
+          removeBtn.type = "button";
+          removeBtn.className = "recent-search-chip-remove";
+          removeBtn.setAttribute("aria-label", "Remove search");
+          removeBtn.innerHTML =
+            '<i class="fas fa-times" aria-hidden="true"></i>';
+
+          chip.append(labelBtn, removeBtn);
+
+          labelBtn.addEventListener("click", function () {
+            syncSearchInputs(search, searchInput);
+            currentSearchQuery = search;
+            performSearch(true);
             closeDropdown();
-          }, function () {
-            // cancelled
           });
-        };
+
+          removeBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            recentSearches = recentSearches.filter(function (s) {
+              return s !== search;
+            });
+            localStorage.setItem(
+              "recentSearches",
+              JSON.stringify(recentSearches)
+            );
+            renderRecentSearches();
+          });
+
+          recentSearchesList.appendChild(chip);
+        });
       }
+
+      wireClearRecentBtn();
     }
 
     recentSearchesSection.style.display = "block";
@@ -1396,11 +1422,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Update recently viewed
     if (name) {
-      var recent = JSON.parse(localStorage.getItem("recentProjects") || "[]");
+      var recent = JSON.parse(localStorage.getItem("recentlyViewed") || "[]");
       recent = recent.filter(function (r) { return r !== name; });
       recent.unshift(name);
       recent = recent.slice(0, 4);
-      localStorage.setItem("recentProjects", JSON.stringify(recent));
+      localStorage.setItem("recentlyViewed", JSON.stringify(recent));
       if (typeof window.updateRecentlyViewed === "function") window.updateRecentlyViewed();
     }
   }
@@ -1421,41 +1447,7 @@ document.addEventListener("DOMContentLoaded", function () {
       removeTrap = null;
     }
     
-    recentSearchesList.innerHTML = '';
-    recentSearches.slice(0, 5).forEach((search) => {
-        const item = document.createElement('div');
-        item.className = 'dropdown-recent-item';
-        item.innerHTML = `
-            <button type="button" class="dropdown-recent-text" aria-label="Search ${search}">
-                <i class="fas fa-history" style="opacity: 0.5; font-size: 0.9rem;"></i>
-                <span style="flex: 1; color: var(--text-secondary);">${search}</span>
-            </button>
-            <button type="button" class="dropdown-recent-remove" aria-label="Remove search">
-                <i class="fas fa-x"></i>
-            </button>
-        `;
-        
-        const textButton = item.querySelector('.dropdown-recent-text');
-        const removeBtn = item.querySelector('.dropdown-recent-remove');
-        
-        if (textButton) {
-            textButton.addEventListener('click', () => {
-                searchInput.value = search;
-                currentSearchQuery = search;
-                performSearch();
-                closeDropdown();
-            });
-        }
-        
-        if (removeBtn) {
-            removeBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                recentSearches = recentSearches.filter(s => s !== search);
-                localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
-                renderRecentSearches();
-            });
-        }
-    });
+    renderRecentSearches();
     // Clear content
     if (modalBody) {
       modalBody.innerHTML = "";
@@ -1730,241 +1722,6 @@ historyBadge.textContent=`(${recent.length})`;
         }, 100);
     }
   })();
-
-  /* ═══════════════════════════════════════════════════════════════
-       TIMELINE SCROLL REVEAL
-       ═══════════════════════════════════════════════════════════════ */
-  var timelineItems = document.querySelectorAll(".timeline-item[data-reveal]");
-  var timelineFill = document.getElementById("timelineFill");
-  var timelineSection = document.getElementById("timelineSection");
-
-  if (timelineItems.length && !prefersReducedMotion()) {
-    var timelineObserver = new IntersectionObserver(
-      function (entries) {
-        entries.forEach(function (entry) {
-          if (entry.isIntersecting) {
-            entry.target.classList.add("visible");
-          }
-        });
-      },
-      { threshold: 0.25, rootMargin: "0px 0px -50px 0px" }
-    );
-
-    timelineItems.forEach(function (item) {
-      timelineObserver.observe(item);
-    });
-
-    /* ── Serpentine SVG Winding Timeline Path ─────────────────── */
-    var svgNamespace = "http://www.w3.org/2000/svg";
-
-    function getElementOffset(el, parent) {
-      var top = 0;
-      var left = 0;
-      var curr = el;
-      while (curr && curr !== parent) {
-        top += curr.offsetTop || 0;
-
-        left += curr.offsetLeft || 0;
-
-        curr = curr.offsetParent;
-      }
-      return { top: top, left: left };
-    }
-
-    function rebuildTimelineSvg() {
-      var container = document.querySelector(".timeline-container");
-      if (!container) return;
-      var dots = document.querySelectorAll(".timeline-dot");
-      if (dots.length < 2) return;
-
-      var containerWidth = container.offsetWidth;
-      var containerHeight = container.offsetHeight;
-
-      var svg = document.getElementById("timelineSvg");
-      if (!svg) {
-        svg = document.createElementNS(svgNamespace, "svg");
-        svg.id = "timelineSvg";
-        svg.setAttribute("class", "timeline-svg");
-
-        var defs = document.createElementNS(svgNamespace, "defs");
-        var grad = document.createElementNS(svgNamespace, "linearGradient");
-        grad.id = "timelineGrad";
-        grad.setAttribute("x1", "0%");
-        grad.setAttribute("y1", "0%");
-        grad.setAttribute("x2", "0%");
-        
-        grad.setAttribute("y2", "100%");
-
-        var stop1 = document.createElementNS(svgNamespace, "stop");
-        stop1.setAttribute("offset", "0%");
-        stop1.setAttribute("stop-color", "var(--accent)");
-
-        var stop2 = document.createElementNS(svgNamespace, "stop");
-        stop2.setAttribute("offset", "100%");
-        stop2.setAttribute("stop-color", "#06b6d4");
-
-        grad.appendChild(stop1);
-        grad.appendChild(stop2);
-        defs.appendChild(grad);
-
-        // Define a dynamic layout mask path for progress crawling
-        var mask = document.createElementNS(svgNamespace, "mask");
-        mask.id = "timelineMask";
-
-        var maskPath = document.createElementNS(svgNamespace, "path");
-        maskPath.id = "timelineMaskPath";
-        maskPath.setAttribute("fill", "none");
-        maskPath.setAttribute("stroke", "#ffffff");
-        maskPath.setAttribute("stroke-width", "24"); // Wide enough to fully cover glowing dots
-        maskPath.setAttribute("stroke-linecap", "round");
-
-        mask.appendChild(maskPath);
-        defs.appendChild(mask);
-        svg.appendChild(defs);
-
-        var track = document.createElementNS(svgNamespace, "path");
-        track.id = "timelineSvgTrack";
-        track.setAttribute("class", "timeline-svg-track");
-        track.setAttribute("fill", "none");
-
-        var fill = document.createElementNS(svgNamespace, "path");
-        fill.id = "timelineSvgFill";
-        fill.setAttribute("class", "timeline-svg-fill");
-        fill.setAttribute("fill", "none");
-        fill.setAttribute("stroke", "var(--accent)");
-        fill.setAttribute("mask", "url(#timelineMask)");
-
-        svg.appendChild(track);
-        svg.appendChild(fill);
-
-        var grid = document.querySelector(".timeline-grid");
-        container.insertBefore(svg, grid);
-      }
-
-      // Determine layout stable coordinate points for all timeline dots
-      var coords = [];
-      dots.forEach(function (dot) {
-        var offset = getElementOffset(dot, container);
-        var x = offset.left + dot.offsetWidth / 2;
-        var y = offset.top + dot.offsetHeight / 2;
-        coords.push({ x: x, y: y });
-      });
-
-      // Create the winding path
-      var d = "";
-      var startX = containerWidth / 2;
-      d += "M " + startX + " 0";
-      d += " L " + coords[0].x + " " + coords[0].y;
-
-      // Calculate a sweep width that is perfectly responsive
-      // e.g. 16% of container width, capped at 180px for desktop beauty
-      var W = Math.min(180, containerWidth * 0.16);
-
-      for (var i = 0; i < coords.length - 1; i++) {
-        var pStart = coords[i];
-        var pEnd = coords[i + 1];
-        var H = pEnd.y - pStart.y;
-        var dy = H * 0.35; // Symmetrical control point height
-
-        // Even segments (0, 2, 4...) snake to the right, odd segments to the left
-        var dx = i % 2 === 0 ? W : -W;
-
-        var cp1x = pStart.x + dx;
-        var cp1y = pStart.y + dy;
-        var cp2x = pEnd.x + dx;
-        var cp2y = pEnd.y - dy;
-
-        d +=
-          " C " +
-          cp1x +
-          " " +
-          cp1y +
-          ", " +
-          cp2x +
-          " " +
-          cp2y +
-          ", " +
-          pEnd.x +
-          " " +
-          pEnd.y;
-      }
-
-      // Straight exit to the bottom
-      d += " L " + coords[coords.length - 1].x + " " + containerHeight;
-
-      var trackPath = document.getElementById("timelineSvgTrack");
-      var fillPath = document.getElementById("timelineSvgFill");
-      var maskPath = document.getElementById("timelineMaskPath");
-      if (trackPath && fillPath && maskPath) {
-        trackPath.setAttribute("d", d);
-        fillPath.setAttribute("d", d);
-        maskPath.setAttribute("d", d);
-
-        var totalLength = maskPath.getTotalLength();
-        maskPath.style.strokeDasharray = totalLength;
-        maskPath.dataset.totalLength = totalLength;
-
-        // Trigger scroll progress sync immediately
-        updateTimelineFill();
-      }
-    }
-
-
-    /* ── Activate item based on viewport center crossing timeline dots ── */
-    var activeIdx = -1;
-    var dots = document.querySelectorAll(".timeline-dot");
-    /* ── Timeline Fill Progress ───────────────────────────── */
-    function updateTimelineFill() {
-      if (!timelineSection) return;
-      var container = document.querySelector(".timeline-container");
-      if (!container) return;
-
-      var containerRect = container.getBoundingClientRect();
-      var viewportCenterY = window.innerHeight / 2;
-
-      // Calculate relative vertical scroll position of the viewport center relative to the container
-      var relativeY = viewportCenterY - containerRect.top;
-      var offset = Math.max(0, Math.min(1, relativeY / containerRect.height));
-
-      /* ── Dynamic SVG path mask scroll synchronization ──────── */
-      var maskPath = document.getElementById("timelineMaskPath");
-      if (maskPath && maskPath.dataset.totalLength) {
-        var totalLength = parseFloat(maskPath.dataset.totalLength);
-        var dashoffset = totalLength - offset * totalLength;
-        maskPath.style.strokeDashoffset = Math.max(
-          0,
-          Math.min(totalLength, dashoffset)
-        );
-      }
-
-      /* ── Activate item based on viewport center crossing timeline dots ── */
-      var activeIdx = -1;
-      var dots = document.querySelectorAll(".timeline-dot");
-
-      dots.forEach(function (dot, i) {
-        var dotRect = dot.getBoundingClientRect();
-        var dotCenterY = dotRect.top + dotRect.height / 2;
-
-        // A dot is crossed/passed if its vertical center in the viewport is <= the viewport center
-        if (dotCenterY <= viewportCenterY) {
-          activeIdx = i;
-        }
-      });
-
-      timelineItems.forEach(function (item, i) {
-        item.classList.toggle("active", i === activeIdx);
-      });
-    }
-
-    // Initialize SVG path layout recalculations on page render & resize
-    rebuildTimelineSvg();
-    window.addEventListener("resize", debounce(rebuildTimelineSvg, 150));
-    window.addEventListener("scroll", updateTimelineFill, { passive: true });
-  } else if (timelineItems.length) {
-    timelineItems.forEach(function (item) {
-      item.classList.add("visible");
-    });
-  }
 
   /* ── Reveal on Scroll (general) ────────────────────────────── */
   var revealItems = document.querySelectorAll(".reveal-on-scroll");
