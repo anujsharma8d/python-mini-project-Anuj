@@ -56,6 +56,87 @@
   <!-- Cursor Glow -->
   <div aria-hidden="true" class="cursor-glow" id="cursorGlow"></div>
 
+  <!-- Navigation -->
+  <nav aria-label="Primary" class="navbar" id="mainNavbar">
+    <div class="nav-island">
+      <div class="navbar-brand">
+        <a class="logo-wrap" href="#">
+          <img alt="PyMini Logo" class="navbar-logo" src="assets/favicon.svg" / loading="lazy">
+          <div class="logo-text">
+            <span class="logo-py">py</span>
+            <span class="logo-mini">.mini</span>
+            <span class="logo-parens">()</span>
+          </div>
+          <span class="logo-tagline">games, math &amp; terminal toys</span>
+        </a>
+      </div>
+      <div class="search-box">
+        <i class="fas fa-search"></i>
+        <input aria-label="Search projects" id="navSearchInput" placeholder="Search projects or games..." type="text" />
+      </div>
+      <div class="nav-controls" id="navControls">
+        <button aria-label="Mute sounds" class="sound-toggle" type="button">
+          <i class="fas fa-volume-up"></i>
+        </button>
+        <button aria-label="Switch theme" class="theme-toggle" type="button">
+          <i class="fas fa-moon"></i>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <aside class="sidebar-dock" id="mainSidebar">
+    <button class="sidebar-mobile-close" id="sidebarMobileClose" aria-label="Close sidebar" type="button">
+      <i class="fas fa-times" aria-hidden="true"></i>
+    </button>
+    
+    <div class="sidebar-search">
+      <div class="search-box" style="position: relative">
+        <i class="fas fa-search" aria-hidden="true"></i>
+        <input aria-label="Search projects" id="searchInput" placeholder="Search projects or tags..." type="text"
+          role="combobox" aria-autocomplete="list" aria-controls="resultsList" aria-expanded="false" />
+        <div class="search-dropdown" id="searchDropdown" aria-live="polite">
+          <div class="dropdown-content" id="searchDropdownContent">
+            <div class="search-loader" id="searchLoader" style="display: none">
+              <div class="spinner"></div>
+            </div>
+            <div class="recent-searches-chips" id="recentSearchesDropdownList" role="list"></div>
+            </div>
+            <div class="results-section" id="resultsSection" style="display: none">
+              <div class="dropdown-section-title">Projects</div>
+              <div class="dropdown-list" id="resultsList" role="listbox"></div>
+            </div>
+            <div class="tips-section" id="tipsSection">
+              <p><strong>Search tips</strong></p>
+              <ul>
+                <li>
+                  Type a project name — <code>snake</code>, <code>quiz</code>
+                </li>
+                <li>
+                  Filter by tag — <code>game</code>, <code>math</code>,
+                  <code>utility</code>
+                </li>
+              </ul>
+            </div>
+            <div class="no-results-message" id="noResultsMessage" style="display: none">
+              No projects found. Try a different keyword.
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+<div class="recent-searches-section" id="recentSearchesSection">
+  <div class="dropdown-section-title recent-searches-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+    <span class="recent-searches-heading" style="color: #e2e8f0; font-weight: 500;">
+      <i class="fas fa-history" aria-hidden="true" style="margin-right: 6px; color: #a78bfa;"></i>
+      Search History
+    </span>
+    <button id="clearRecentBtn" class="recent-clear-all-btn" aria-label="Clear recent searches" style="background: none; border: none; color: #ef4444; font-size: 0.85rem; cursor: pointer; display: flex; align-items: center; gap: 5px;">
+      <i class="fas fa-trash-alt"></i> Clear History
+    </button>
+  </div>
+  <div class="recent-searches-chips" id="recentSearchesList" role="list"></div>
+</div>
   <!-- SIDEBAR - Fixed Position on Left -->
   <aside class="sidebar" id="mainSidebar">
     <div class="sidebar-menu-wrapper">
