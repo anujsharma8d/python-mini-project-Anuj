@@ -5,6 +5,7 @@ Addresses CVE-2025-0938 (urllib.parse)
 """
 
 import re
+import socket
 from urllib.parse import urlparse, urlunparse
 from typing import Optional, List, Set
 from ipaddress import ip_address, ip_network
@@ -110,17 +111,49 @@ class URLSanitizer:
         return sanitized
     
     def _validate_ip_address(self, host: str) -> None:
-        """Validate IP address against blocked networks."""
+        """Validate IP address against blocked networks, resolving hostnames via DNS."""
         try:
             ip = ip_address(host)
-        except ValueError:
+            self._check_blocked_ip(ip, host)
             return
-        
+        except ValueError:
+            pass
+
+        try:
+            addrinfo = socket.getaddrinfo(host, None)
+        except socket.gaierror:
+            raise InvalidURLError(f"Failed to resolve hostname: {host}")
+
+        seen = set()
+        for _, _, _, _, sockaddr in addrinfo:
+            ip = ip_address(sockaddr[0])
+            if ip in seen:
+                continue
+            seen.add(ip)
+            self._check_blocked_ip(ip, host)
+
+    def _check_blocked_ip(self, ip, host):
+        """Check a single IP against blocked networks."""
         for network in self._blocked_networks:
             if ip in network:
                 if not (self.allow_localhost and ip.is_loopback):
                     if not (self.allow_private and ip.is_private):
                         raise InvalidURLError(f"Blocked IP address: {host}")
+
+    def _validate_port(self, port: Optional[int]) -> None:
+        """Validate port number against allowed/blocked lists."""
+        if port is None:
+            return
+        if port < 1 or port > 65535:
+            raise InvalidURLError(f"Invalid port number: {port}")
+        if self.allowed_ports is not None:
+            if port not in self.allowed_ports:
+                raise InvalidURLError(
+                    f"Port {port} is not allowed. "
+                    f"Allowed ports: {', '.join(str(p) for p in self.allowed_ports)}"
+                )
+        elif port in self.BLOCKED_PORTS:
+            raise InvalidURLError(f"Blocked port: {port}")
     
     def _validate_port(self, port: Optional[int]) -> None:
         """Validate port number against allowed/blocked lists."""
