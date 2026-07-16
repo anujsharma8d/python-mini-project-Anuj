@@ -427,6 +427,75 @@ def generate_banner(name, category, filename):
             x = gx_min + r * 80 + 40
             y = gy_min + c * 80 + 40
             v_draw.text((x, y), d, fill=color_accent, anchor="mm")
+    elif "queens" in n_lower or "logic" in n_lower:
+        # Draw colored irregular regions with queens - matching the reference design
+        cx, cy = 400, 225
+        
+        # Region colors inspired by the reference image (matching glassmorphism theme)
+        region_colors_queens = [
+            (219, 112, 147),    # Pink/Magenta
+            (70, 130, 180),     # Steel Blue
+            (144, 238, 144),    # Light Green
+            (255, 215, 0),      # Gold/Yellow
+            (186, 85, 211),     # Medium Orchid
+            (135, 206, 250)     # Light Sky Blue
+        ]
+        
+        # Define irregular regions (6 regions, roughly 6 cells each)
+        # Each region is a list of (row, col) coordinates
+        regions_map = {
+            0: [(0, 0), (0, 1), (0, 2), (1, 0), (1, 1), (1, 2)],           # Pink - top-left
+            1: [(0, 3), (0, 4), (0, 5), (1, 3), (1, 4), (1, 5)],           # Blue - top-right
+            2: [(2, 0), (2, 1), (3, 0), (3, 1), (4, 0), (4, 1)],           # Green - left
+            3: [(2, 2), (2, 3), (3, 2), (3, 3), (4, 2), (4, 3)],           # Gold - center
+            4: [(2, 4), (2, 5), (3, 4), (3, 5), (4, 4), (4, 5)],           # Purple - right
+            5: [(5, 0), (5, 1), (5, 2), (5, 3), (5, 4), (5, 5)]            # Light Blue - bottom
+        }
+        
+        grid_size = 6
+        cell_w = 50
+        cell_h = 50
+        grid_x = cx - (grid_size * cell_w) // 2
+        grid_y = cy - (grid_size * cell_h) // 2 + 20
+        
+        # Draw each cell with region background
+        for region_id, cells in regions_map.items():
+            region_col = region_colors_queens[region_id]
+            for r, c in cells:
+                x = grid_x + c * cell_w
+                y = grid_y + r * cell_h
+                
+                # Draw filled cell with semi-transparent region color
+                v_draw.rectangle(
+                    [x + 1, y + 1, x + cell_w - 1, y + cell_h - 1],
+                    fill=(*region_col, 100),
+                    outline=(*region_col, 150),
+                    width=2
+                )
+        
+        # Draw grid borders
+        for r in range(grid_size + 1):
+            v_draw.line([(grid_x, grid_y + r * cell_h), (grid_x + grid_size * cell_w, grid_y + r * cell_h)], 
+                        fill=(255, 255, 255, 80), width=1)
+        for c in range(grid_size + 1):
+            v_draw.line([(grid_x + c * cell_w, grid_y), (grid_x + c * cell_w, grid_y + grid_size * cell_h)], 
+                        fill=(255, 255, 255, 80), width=1)
+        
+        # Place queens on some cells (solution-like pattern)
+        queen_positions = [
+            (0, 1, 0),  # Region 0 (Pink)
+            (1, 4, 1),  # Region 1 (Blue)
+            (2, 1, 2),  # Region 2 (Green)
+            (3, 3, 3),  # Region 3 (Gold)
+            (4, 4, 4),  # Region 4 (Purple)
+            (5, 2, 5)   # Region 5 (Light Blue)
+        ]
+        
+        for region_id, c, r in queen_positions:
+            x = grid_x + c * cell_w + cell_w // 2
+            y = grid_y + r * cell_h + cell_h // 2
+            # Draw glowing queen crown emoji
+            v_draw.text((x, y), "👑", fill=(255, 255, 255, 255), anchor="mm", font=font_subtitle)
     elif "blackjack" in n_lower:
         # Playing cards
         def draw_card(x, y, val):
@@ -736,7 +805,7 @@ projects = [
     ("Chess Game", "games", "chess.webp"),
     ("Number Sliding Puzzle", "games", "number-sliding-puzzle.webp"),
     ("War Card Game", "games", "war-card-game.webp"),
-    ("Minesweeper", "games", "minesweeper.webp"),
+    ("Queens Logic Puzzle", "games", "queens-logic-puzzle.webp"),
 
     # MATH
     ("AP/GP/AGP/HP Recognizer", "math", "progression-recognizer.webp"),

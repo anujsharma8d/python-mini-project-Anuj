@@ -22,6 +22,7 @@ function getProjectHTML(projectName) {
     "morse-code": getMorseCodeHTML(),
     "tower-of-hanoi": getTowerOfHanoiHTML(),
     nqueens: getNQueensHTML(),
+    "queens-logic-puzzle": getQueensLogicPuzzleHTML(),
     "matrix-calculator": () => getMatrixCalculatorHTML(),
     "sudoku-game": getSudokuGameHTML(),
     "unit-converter": getUnitConverterHTML(),
@@ -54,6 +55,11 @@ function toPascalCase(str) {
 function initializeProject(projectName) {
   if (projectName === "number-sliding-puzzle") {
     initNumberSlidingPuzzle();
+    return;
+  }
+
+  if (projectName === "queens-logic-puzzle") {
+    initQueensLogicPuzzle();
     return;
   }
 
@@ -210,6 +216,17 @@ const projectInstructions = {
       "Click or press spacebar to make the bird fly",
       "Avoid hitting the pipes",
       "Try to get the highest score",
+    ],
+  },
+  "queens-logic-puzzle": {
+    title: "👑 How to Play Queens Logic Puzzle",
+    steps: [
+      "Place one queen in each row, column, and colored region",
+      "Queens cannot touch horizontally, vertically, or diagonally",
+      "Click a cell to place a queen, click again to remove it",
+      "Use Hint to highlight a valid placement",
+      "Use Undo to revert your last move",
+      "Solve the puzzle to win!",
     ],
   },
   "dice-rolling": {
