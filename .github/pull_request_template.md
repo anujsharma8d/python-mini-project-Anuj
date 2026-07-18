@@ -1,6 +1,6 @@
 ### 📝 Description
 ### 🔗 Linked Issue
-Closes #
+Closes #(issue number)
 
 ---
 
