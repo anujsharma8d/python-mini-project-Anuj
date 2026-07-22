@@ -38,6 +38,9 @@ function getProjectHTML(projectName) {
     "tsp-visualizer": getTspVisualizerHTML(),
     'minesweeper': getMinesweeperHTML()
   };
+  return projects[projectName];
+}
+  
 
 
 function toPascalCase(str) {
